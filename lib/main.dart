@@ -1,69 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:shop_flutter/provide/current_index_provide.dart';
+import 'package:provide/provide.dart';
+import 'package:shop_flutter/pages/IndexPage.dart';
+import './provide/CurrentIndexProvide.dart';
 import './config/index.dart';
 
 void main() {
   var currentIndexProvide = CurrentIndexProvide();
-
   var providers = Providers();
+
+  providers..provide(Provider<CurrentIndexProvide>.value(currentIndexProvide));
+
+  runApp(ProviderNode(child: MyApp(), providers: providers));
 }
 
 class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: KString.homeTitle,
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
-
-  final String title;
-
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
+    return Container(
+      child: MaterialApp(
+        title: KString.homeTitle, //首页
+        debugShowCheckedModeBanner: false,
+        //定制主题
+        theme: ThemeData(primaryColor: KColor.primaryColor),
+        home: IndexPage(),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.display1,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+
     );
   }
 }
