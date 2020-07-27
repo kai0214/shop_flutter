@@ -3,6 +3,10 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_swiper/flutter_swiper.dart';
+import 'package:provider/provider.dart';
+import 'package:shop_flutter/model/category.dart';
+import 'package:shop_flutter/provide/CategoryProvider.dart';
+import 'package:shop_flutter/provide/CurrentIndexProvider.dart';
 import '../http/http_utils.dart';
 import '../model/goods.dart';
 import '../config/index.dart';
@@ -19,25 +23,38 @@ class _HomePageState extends State<HomePage>
   //防止刷新处理  保持当前状态
   List<GoodsItem> goodsList;
 
+  List<CategoryItem> categoryList;
+
   @override
   bool get wantKeepAlive => true;
 
   void getGoodsList(page) {
-    GoodsList goods;
-    HttpUtils.getGoodsList<GoodsList>(
+    GoodsModel goods;
+    HttpUtils.getGoodsList<GoodsModel>(
         {"page": page},
         (data) => {
               setState(() {
-                goods = GoodsList.fromJson(data);
+                goods = GoodsModel.fromJson(data);
                 if (page == 1) {
                   if (goodsList != null) {
                     goodsList.clear();
                   }
-                  goodsList = goods.list;
+                  goodsList = goods.datas;
                 } else {
-                  goodsList.addAll(goods.list);
+                  goodsList.addAll(goods.datas);
                 }
               })
+            },
+        (code, msg) => null);
+  }
+
+  void getGoodsCategory() {
+    CategoryModel categoryModel;
+    HttpUtils.getCategoryList(
+        null,
+        (data) => {
+              categoryModel = CategoryModel.fromJson(data),
+              categoryList = categoryModel.datas,
             },
         (code, msg) => null);
   }
@@ -46,6 +63,7 @@ class _HomePageState extends State<HomePage>
   void initState() {
     // TODO: implement initState
     getGoodsList(page);
+    getGoodsCategory();
     super.initState();
   }
 
@@ -56,47 +74,45 @@ class _HomePageState extends State<HomePage>
         appBar: AppBar(
           title: Text(KString.homeTitle),
         ),
-        body: getWidget(goodsList, context));
+        body: getWidget(goodsList));
   }
-}
 
-Widget getWidget(List<GoodsItem> goodsList, content) {
-  if (goodsList != null) {
-    return EasyRefresh(
-      footer: ClassicalFooter(),
-      header: ClassicalHeader(),
-      child: ListView(
-        children: <Widget>[
-          SwiperDiy(
-            swiperDataList: goodsList,
-          ),
-          TopNavBar(
-            navBarList: goodsList,
-          ),
-          GoodsRecommend(
-            recommendList: goodsList,
-          ),
-          FloorPic(
-            item: goodsList[0],
-          ),
-          HotGoodsWidget(
-            hotGoodsList: goodsList,
-          )
-        ],
-      ),
-      onLoad: () async {
-        page++;
+  Widget getWidget(List<GoodsItem> goodsList) {
+    if (goodsList != null) {
+      return EasyRefresh(
+        footer: ClassicalFooter(),
+        header: ClassicalHeader(),
+        child: ListView(
+          children: <Widget>[
+            SwiperDiy(
+              swiperDataList: goodsList,
+            ),
+            TopNavBar(
+              navBarList: categoryList,
+            ),
+            GoodsRecommend(
+              recommendList: goodsList,
+            ),
+            FloorPic(
+              item: goodsList[0],
+            ),
+            HotGoodsWidget(
+              hotGoodsList: goodsList,
+            )
+          ],
+        ),
+        onLoad: () async {
+          page++;
 //        content.getGoodsList(page);
-      },
-      onRefresh: () async {
-        page = 1;
+        },
+        onRefresh: () async {
+          page = 1;
 //        content.getGoodsList(page);
-      },
-    );
-  } else {
-    return Center(
-      child: Text("错误"),
-    );
+        },
+      );
+    } else {
+      return loadingWidget();
+    }
   }
 }
 
@@ -132,7 +148,7 @@ class SwiperDiy extends StatelessWidget {
 
 //首页分类导航
 class TopNavBar extends StatelessWidget {
-  final List<GoodsItem> navBarList;
+  final List<CategoryItem> navBarList;
 
   const TopNavBar({Key key, this.navBarList}) : super(key: key);
 
@@ -147,7 +163,7 @@ class TopNavBar extends StatelessWidget {
       color: Colors.white,
       margin: EdgeInsets.only(top: 5),
       padding: EdgeInsets.all(10),
-      height: ScreenUtil().setHeight(300),
+      height: ScreenUtil().setHeight(330),
       child: GridView.count(
         physics: NeverScrollableScrollPhysics(), //禁止滚动
         crossAxisCount: 5,
@@ -160,15 +176,16 @@ class TopNavBar extends StatelessWidget {
     );
   }
 
-  Widget _gridViewItem(BuildContext context, GoodsItem item, index) {
+  Widget _gridViewItem(BuildContext context, CategoryItem item, index) {
     return InkWell(
       onTap: () {
         //跳转
+        _goCategory(context, index, item.id, item);
       },
       child: Column(
         children: <Widget>[
           Image.network(
-            item.cover,
+            "coveritem.",
             width: ScreenUtil().setWidth(90),
             height: ScreenUtil().setHeight(90),
           ),
@@ -176,6 +193,13 @@ class TopNavBar extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  //跳转到分类页面
+  void _goCategory(context, int index, int categoryId, CategoryItem item) {
+    Provider.of<CategoryProvider>(context).changeCategory(index, categoryId);
+    Provider.of<CategoryProvider>(context).setSubCategoryList(item.subList);
+    Provider.of<CurrentIndexProvider>(context).changeIndex(1);
   }
 }
 
@@ -236,7 +260,7 @@ class GoodsRecommend extends StatelessWidget {
                 ),
                 Padding(
                   padding: EdgeInsets.only(left: 5),
-                  child: Text("现价：" + item.presentPrice,
+                  child: Text("现价：" + item.presentPrice.toString(),
                       style: TextStyle(fontSize: 13.0),
                       textAlign: TextAlign.left,
                       overflow: TextOverflow.ellipsis),
@@ -244,7 +268,7 @@ class GoodsRecommend extends StatelessWidget {
                 Padding(
                   padding: EdgeInsets.only(left: 5),
                   child: Text(
-                    "原价：" + item.originalPrice,
+                    "原价：" + item.originalPrice.toString(),
                     style: TextStyle(
                       fontSize: 12.0,
                       decoration: TextDecoration.lineThrough,

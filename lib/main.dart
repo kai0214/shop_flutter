@@ -1,20 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:provide/provide.dart';
+import 'package:provider/provider.dart';
 import 'package:shop_flutter/pages/IndexPage.dart';
-import './provide/CurrentIndexProvide.dart';
+import './provide/CategoryProvider.dart';
+import './provide/CurrentIndexProvider.dart';
 import './config/index.dart';
 
 void main() {
-  var currentIndexProvide = CurrentIndexProvide();
-  var providers = Providers();
-
-  providers..provide(Provider<CurrentIndexProvide>.value(currentIndexProvide));
-
-  runApp(ProviderNode(child: MyApp(), providers: providers));
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider.value(value: CurrentIndexProvider()),
+      ChangeNotifierProvider.value(value: CategoryProvider()),
+    ],
+    child: MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
-
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -25,7 +26,6 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(primaryColor: KColor.primaryColor),
         home: IndexPage(),
       ),
-
     );
   }
 }

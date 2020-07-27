@@ -2,9 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/screenutil.dart';
-import 'package:provide/provide.dart';
 import 'package:provider/provider.dart';
-import 'package:shop_flutter/provide/CategoryProvide.dart';
+import 'package:shop_flutter/model/goods.dart';
+import 'package:shop_flutter/provide/CategoryProvider.dart';
 import '../http/http_utils.dart';
 import '../model/category.dart';
 import '../config/index.dart';
@@ -14,12 +14,12 @@ class CategoryPage extends StatefulWidget {
   State<StatefulWidget> createState() => _CategoryPageState();
 }
 
-Category category;
+CategoryModel categoryModel;
 List<CategoryItem> categoryList;
 List<SubCategoryItem> subCategoryList;
+GoodsModel goodsModel;
 int categoryIndex = 0;
 int subCategoryIndex = 0;
-
 
 class _CategoryPageState extends State<CategoryPage> {
   @override
@@ -48,7 +48,10 @@ class _CategoryPageState extends State<CategoryPage> {
           children: <Widget>[
             LeftCategoryNav(),
             Column(
-              children: <Widget>[],
+              children: <Widget>[
+                RightCategoryNav(),
+                CategoryGoods(),
+              ],
             )
           ],
         ),
@@ -65,14 +68,36 @@ class _CategoryPageState extends State<CategoryPage> {
         null,
         (data) => {
               setState(() {
-                category = Category.fromJson(data);
-                categoryList = category.data;
-                subCategoryList = categoryList[categoryIndex].subList;
-//            _provide.getSubCategoryList(categoryList[categoryIndex].subList);
+                categoryModel = CategoryModel.fromJson(data);
+                categoryList = categoryModel.datas;
+                subCategoryList = categoryList[0].subList;
+                Provider.of<CategoryProvider>(context)
+                    .changeCategory(0, categoryList[0].id);
+                Provider.of<CategoryProvider>(context)
+                    .changeSubCategory(0, subCategoryList[0].subId);
+                Provider.of<CategoryProvider>(context)
+                    .setSubCategoryList(categoryList[0].subList);
+                _getCategoryGoodsList(context);
               })
             },
         (code, msg) => null);
   }
+}
+
+_getCategoryGoodsList(context) {
+  var param = {
+    "page": Provider.of<CategoryProvider>(context).page,
+    "category": Provider.of<CategoryProvider>(context).categoryId,
+    "sub_category": Provider.of<CategoryProvider>(context).subCategoryId
+  };
+  HttpUtils.getCategoryGoodsList(
+      param,
+      (data) => {
+            goodsModel = GoodsModel.fromJson(data),
+            Provider.of<CategoryProvider>(context)
+                .setGoodsList(goodsModel.datas)
+          },
+      (code, msg) => null);
 }
 
 class LeftCategoryNav extends StatefulWidget {
@@ -87,6 +112,7 @@ class _LeftCategoryNavState extends State<LeftCategoryNav> {
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
+    categoryIndex = Provider.of<CategoryProvider>(context).categoryIndex;
     return Container(
         width: ScreenUtil().setWidth(180),
         decoration: BoxDecoration(
@@ -105,8 +131,14 @@ class _LeftCategoryNavState extends State<LeftCategoryNav> {
         onTap: () {
           //Item点击
           setState(() {
-            categoryIndex = index;
+            Provider.of<CategoryProvider>(context)
+                .changeCategory(index, item.id);
+            Provider.of<CategoryProvider>(context)
+                .setSubCategoryList(categoryList[index].subList);
+            categoryIndex =
+                Provider.of<CategoryProvider>(context).categoryIndex;
             subCategoryIndex = 0;
+            _getCategoryGoodsList(context);
           });
         },
         child: Container(
@@ -143,32 +175,23 @@ class RightCategoryNav extends StatefulWidget {
 
 //右侧菜单分类
 class _RightCategoryNavState extends State<RightCategoryNav> {
-  void _changePage(CategoryItem item) {
-    setState(() {
-      subCategoryList = item.subList;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
+    subCategoryList = Provider.of<CategoryProvider>(context).subCategoryList;
     return Container(
-        width: ScreenUtil().setWidth(750 - 180),
-        child: Container(
-          child: Consumer<CategoryProvide>(
-              builder: (context, categoryProvide, widget) {
-            subCategoryList = categoryProvide.subCategoryList;
-            return Container(
-              child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: subCategoryList.length,
-                  itemBuilder: (context, index) {
-                    return _subCategoryItem(
-                        subCategoryList[index], index, context);
-                  }),
-            );
-          }),
-        ));
+      color: Colors.black12,
+      width: ScreenUtil().setWidth(750 - 180),
+      height: ScreenUtil().setHeight(60),
+      child: Container(
+        child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: subCategoryList.length,
+            itemBuilder: (context, index) {
+              return _subCategoryItem(subCategoryList[index], index, context);
+            }),
+      ),
+    );
   }
 
   Widget _subCategoryItem(SubCategoryItem item, index, context) {
@@ -176,7 +199,11 @@ class _RightCategoryNavState extends State<RightCategoryNav> {
       onTap: () {
         //Item点击
         setState(() {
-          subCategoryIndex = index;
+          Provider.of<CategoryProvider>(context)
+              .changeSubCategory(index, item.subId);
+          subCategoryIndex =
+              Provider.of<CategoryProvider>(context).subCategoryIndex;
+          _getCategoryGoodsList(context);
         });
       },
       child: Container(
@@ -194,10 +221,98 @@ class _RightCategoryNavState extends State<RightCategoryNav> {
 }
 
 //商品列表
-class CategoryGoodsList extends StatelessWidget {
+class CategoryGoods extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() {
+    // TODO: implement createState
+    return CategoryGoodsState();
+  }
+}
+
+class CategoryGoodsState extends State<CategoryGoods> {
+  //滚动控制
+
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
-    throw UnimplementedError();
+    List<GoodsItem> goodsList =
+        Provider.of<CategoryProvider>(context).goodsList;
+    if (goodsList.length == 0) {
+      return noDataWidget();
+    }
+    return Container(
+      color: Colors.white,
+      width: ScreenUtil().setWidth(750 - 180),
+      height: ScreenUtil().setHeight(1006),
+      child: Container(
+        child: ListView.builder(
+            scrollDirection: Axis.vertical,
+            itemCount: goodsList.length,
+            itemBuilder: (context, index) {
+              return _goodsItem(goodsList[index], index, context);
+            }),
+      ),
+    );
+  }
+
+  Widget _goodsItem(GoodsItem item, int index, context) {
+    return InkWell(
+      onTap: () {},
+      child: Container(
+        padding: EdgeInsets.all(5),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: <Widget>[
+            _goodsImage(item),
+            Column(
+              children: <Widget>[_goodsName(item), _goodsPrice(item)],
+            )
+          ],
+        ),
+      ),
+    );
+  }
+
+  //商品图片
+  Widget _goodsImage(GoodsItem item) {
+    return Container(
+      width: ScreenUtil().setHeight(200),
+      child: Image.network(item.cover),
+    );
+  }
+
+  //商品名称
+  Widget _goodsName(GoodsItem item) {
+    return Container(
+      padding: EdgeInsets.only(left: 5),
+      width: ScreenUtil().setWidth(350),
+      child: Expanded(
+          child: Text(
+        item.name,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(fontSize: ScreenUtil().setSp(28)),
+      )),
+    );
+  }
+
+  //商品价格
+  Widget _goodsPrice(GoodsItem item) {
+    return Container(
+      margin: EdgeInsets.only(top: 10.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            '价格:￥${item.presentPrice}',
+            style: TextStyle(color: KColor.primaryColor),
+          ),
+          Text(
+            '￥${item.originalPrice}',
+            style: KFont.oriPriceStyle,
+          ),
+        ],
+      ),
+    );
   }
 }

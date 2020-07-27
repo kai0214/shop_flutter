@@ -16,4 +16,7 @@ class HttpConf {
 
   //获取分类列表
   static const String categoryList = "v1/category/list";
+
+  //获取分类商品列表
+  static const String categoryGoodsList = "v1/goods/categoryGoodsList";
 }

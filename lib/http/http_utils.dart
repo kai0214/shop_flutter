@@ -17,7 +17,11 @@ class HttpUtils {
     get(HttpConf.goodsList, param, success: success, fail: fail);
   }
 
-  static void getCategoryList<T>(param,Success success,Fail fail){
+  static void getCategoryGoodsList<T>(param, Success success, Fail fail) {
+    get(HttpConf.categoryGoodsList, param, success: success, fail: fail);
+  }
+
+  static void getCategoryList<T>(param, Success success, Fail fail) {
     get(HttpConf.categoryList, param, success: success, fail: fail);
   }
 

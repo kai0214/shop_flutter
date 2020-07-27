@@ -1,17 +1,18 @@
-class GoodsList {
+
+class GoodsModel {
   int code;
   String msg;
-  List<GoodsItem> list;
+  List<GoodsItem> datas;
 
-  GoodsList({this.code, this.msg, this.list});
+  GoodsModel({this.code, this.msg, this.datas});
 
-  GoodsList.fromJson(Map<String, dynamic> json) {
+  GoodsModel.fromJson(Map<String, dynamic> json) {
     code = json['code'];
     msg = json['msg'];
-    if (json['list'] != null) {
-      list = new List<GoodsItem>();
-      json['list'].forEach((v) {
-        list.add(new GoodsItem.fromJson(v));
+    if (json['datas'] != null) {
+      datas = new List<GoodsItem>();
+      json['datas'].forEach((v) {
+        datas.add(new GoodsItem.fromJson(v));
       });
     }
   }
@@ -20,8 +21,8 @@ class GoodsList {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['code'] = this.code;
     data['msg'] = this.msg;
-    if (this.list != null) {
-      data['list'] = this.list.map((v) => v.toJson()).toList();
+    if (this.datas != null) {
+      data['datas'] = this.datas.map((v) => v.toJson()).toList();
     }
     return data;
   }
@@ -32,16 +33,16 @@ class GoodsItem {
   String name;
   String describe;
   String cover;
-  String presentPrice;
-  String originalPrice;
+  dynamic presentPrice;
+  dynamic originalPrice;
 
   GoodsItem(
       {this.id,
-      this.name,
-      this.describe,
-      this.cover,
-      this.presentPrice,
-      this.originalPrice});
+        this.name,
+        this.describe,
+        this.cover,
+        this.presentPrice,
+        this.originalPrice});
 
   GoodsItem.fromJson(Map<String, dynamic> json) {
     id = json['id'];
