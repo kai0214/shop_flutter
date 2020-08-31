@@ -3,8 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_screenutil/screenutil.dart';
 import 'package:provider/provider.dart';
-import 'package:shop_flutter/model/goods.dart';
-import 'package:shop_flutter/provide/CategoryProvider.dart';
+import 'package:shop_flutter/http/log_utils.dart';
+import '../model/goods.dart';
+import '../provide/CategoryProvider.dart';
+import '../routers/application.dart';
+import '../routers/routers.dart';
 import '../http/http_utils.dart';
 import '../model/category.dart';
 import '../config/index.dart';
@@ -37,11 +40,11 @@ class _CategoryPageState extends State<CategoryPage> {
       appBar: AppBar(
         title: Text("商品分类"),
       ),
-      body: _getWidget(),
+      body: _bodyWidget(),
     );
   }
 
-  Widget _getWidget() {
+  Widget _bodyWidget() {
     if (categoryList != null) {
       return Container(
         child: Row(
@@ -57,9 +60,7 @@ class _CategoryPageState extends State<CategoryPage> {
         ),
       );
     } else {
-      return Center(
-        child: Text("错误"),
-      );
+      return noDataWidget();
     }
   }
 
@@ -72,11 +73,15 @@ class _CategoryPageState extends State<CategoryPage> {
                 categoryList = categoryModel.datas;
                 subCategoryList = categoryList[0].subList;
                 Provider.of<CategoryProvider>(context)
-                    .changeCategory(0, categoryList[0].id);
-                Provider.of<CategoryProvider>(context)
                     .changeSubCategory(0, subCategoryList[0].subId);
                 Provider.of<CategoryProvider>(context)
                     .setSubCategoryList(categoryList[0].subList);
+                if (Provider.of<CategoryProvider>(context).isNotifyGoodsList) {
+                  Provider.of<CategoryProvider>(context)
+                      .changeCategory(0, categoryList[0].id);
+                  Provider.of<CategoryProvider>(context)
+                      .setNotifyGoodsList(true);
+                }
                 _getCategoryGoodsList(context);
               })
             },
@@ -90,6 +95,7 @@ _getCategoryGoodsList(context) {
     "category": Provider.of<CategoryProvider>(context).categoryId,
     "sub_category": Provider.of<CategoryProvider>(context).subCategoryId
   };
+  LogUtils.print_("0000000" + param.toString());
   HttpUtils.getCategoryGoodsList(
       param,
       (data) => {
@@ -257,16 +263,36 @@ class CategoryGoodsState extends State<CategoryGoods> {
 
   Widget _goodsItem(GoodsItem item, int index, context) {
     return InkWell(
-      onTap: () {},
+      onTap: () {
+        Application.router
+            .navigateTo(context, Routers.goodsDetailsPage + "?id=${item.id}");
+      },
       child: Container(
         padding: EdgeInsets.all(5),
+        height: ScreenUtil().setHeight(200),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             _goodsImage(item),
-            Column(
-              children: <Widget>[_goodsName(item), _goodsPrice(item)],
+            Container(
+              height: ScreenUtil().setHeight(200),
+              child: Stack(
+                children: <Widget>[
+                  _goodsName(item),
+                  Positioned(
+                    bottom: 0,
+                    child: _goodsPrice(item),
+                  ),
+                ],
+              ),
             )
+
+//            Column(
+//              crossAxisAlignment: CrossAxisAlignment.start,
+//              children: <Widget>[
+//
+//              ],
+//            )
           ],
         ),
       ),
@@ -277,7 +303,10 @@ class CategoryGoodsState extends State<CategoryGoods> {
   Widget _goodsImage(GoodsItem item) {
     return Container(
       width: ScreenUtil().setHeight(200),
-      child: Image.network(item.cover),
+      child: Image.network(
+        item.cover,
+        fit: BoxFit.fill,
+      ),
     );
   }
 
@@ -299,17 +328,21 @@ class CategoryGoodsState extends State<CategoryGoods> {
   //商品价格
   Widget _goodsPrice(GoodsItem item) {
     return Container(
-      margin: EdgeInsets.only(top: 10.0),
+      padding: EdgeInsets.only(left: 5),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
           Text(
-            '价格:￥${item.presentPrice}',
-            style: TextStyle(color: KColor.primaryColor),
+            '￥${item.presentPrice}',
+            style: KFont.prePriceStyle,
           ),
-          Text(
-            '￥${item.originalPrice}',
-            style: KFont.oriPriceStyle,
+          Padding(
+            padding: EdgeInsets.only(left: 5),
+            child: Text(
+              '￥${item.originalPrice}',
+              style: KFont.oriPriceStyle,
+            ),
           ),
         ],
       ),

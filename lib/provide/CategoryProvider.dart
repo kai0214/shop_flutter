@@ -13,6 +13,7 @@ class CategoryProvider with ChangeNotifier {
   String noMoreText = ''; //显示更多的表示
   bool isNewCategory = true;
   List<GoodsItem> goodsList = [];
+  bool isNotifyGoodsList = true;
 
   //首页点击类别时更改类别
   changeCategory(int index, int id) {
@@ -49,4 +50,10 @@ class CategoryProvider with ChangeNotifier {
     goodsList = list;
     notifyListeners();
   }
+
+  setNotifyGoodsList(bool isNew){
+    isNotifyGoodsList = isNew;
+    notifyListeners();
+  }
+
 }

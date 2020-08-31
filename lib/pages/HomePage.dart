@@ -26,7 +26,7 @@ class _HomePageState extends State<HomePage>
   List<CategoryItem> categoryList;
 
   @override
-  bool get wantKeepAlive => true;
+  bool get wantKeepAlive => false;
 
   void getGoodsList(page) {
     GoodsModel goods;
@@ -198,7 +198,10 @@ class TopNavBar extends StatelessWidget {
   //跳转到分类页面
   void _goCategory(context, int index, int categoryId, CategoryItem item) {
     Provider.of<CategoryProvider>(context).changeCategory(index, categoryId);
+    Provider.of<CategoryProvider>(context)
+        .changeSubCategory(0, item.subList[0].subId);
     Provider.of<CategoryProvider>(context).setSubCategoryList(item.subList);
+    Provider.of<CategoryProvider>(context).setNotifyGoodsList(false);
     Provider.of<CurrentIndexProvider>(context).changeIndex(1);
   }
 }
@@ -221,7 +224,7 @@ class GoodsRecommend extends StatelessWidget {
 
   Widget _recommendList() {
     return Container(
-      height: ScreenUtil().setHeight(400),
+      height: ScreenUtil().setHeight(430),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: recommendList.length,
@@ -242,9 +245,12 @@ class GoodsRecommend extends StatelessWidget {
             color: Colors.white,
             border: Border(
               left: BorderSide(width: 0.5, color: KColor.primaryColor),
+              top: BorderSide(width: 0.5, color: KColor.primaryColor),
+              bottom: BorderSide(width: 0.5, color: KColor.primaryColor),
+              right: BorderSide(width: 0.5, color: KColor.primaryColor),
             ),
           ),
-          height: ScreenUtil().setHeight(380),
+          height: ScreenUtil().setHeight(390),
           width: ScreenUtil().setWidth(350),
           margin: EdgeInsets.all(8),
           alignment: Alignment.centerLeft,
@@ -260,19 +266,14 @@ class GoodsRecommend extends StatelessWidget {
                 ),
                 Padding(
                   padding: EdgeInsets.only(left: 5),
-                  child: Text("现价：" + item.presentPrice.toString(),
-                      style: TextStyle(fontSize: 13.0),
-                      textAlign: TextAlign.left,
-                      overflow: TextOverflow.ellipsis),
+                  child: Text("现价：¥" + item.presentPrice.toString(),
+                      style: KFont.prePriceStyle),
                 ),
                 Padding(
                   padding: EdgeInsets.only(left: 5),
                   child: Text(
-                    "原价：" + item.originalPrice.toString(),
-                    style: TextStyle(
-                      fontSize: 12.0,
-                      decoration: TextDecoration.lineThrough,
-                    ),
+                    "原价：¥" + item.originalPrice.toString(),
+                    style: KFont.oriPriceStyle,
                   ),
                 ),
               ],
@@ -385,19 +386,13 @@ class HotGoodsWidget extends StatelessWidget {
               children: <Widget>[
                 Text(
                   '￥${item.presentPrice}',
-                  style: TextStyle(
-                      fontSize: ScreenUtil().setSp(20.0),
-                      color: KColor.primaryColor),
+                  style: KFont.prePriceStyle,
                 ),
                 Padding(
                   padding: EdgeInsets.only(left: 5),
                   child: Text(
                     '￥${item.originalPrice}',
-                    style: TextStyle(
-                      fontSize: ScreenUtil().setSp(20.0),
-                      color: KColor.primaryColor,
-                      decoration: TextDecoration.lineThrough,
-                    ),
+                    style: KFont.oriPriceStyle,
                   ),
                 )
               ],

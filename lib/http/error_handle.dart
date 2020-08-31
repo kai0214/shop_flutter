@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:dio/dio.dart';
 
 class ExceptionHandle {
-  static const int success = 200;
+  static const int success = 0;
   static const int success_not_content = 204;
   static const int unauthorized = 401;
   static const int forbidden = 403;

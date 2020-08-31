@@ -1,6 +1,8 @@
 import 'dart:convert';
 
 import 'package:shop_flutter/config/http_conf.dart';
+import 'package:shop_flutter/config/toast.dart';
+import 'package:shop_flutter/http/error_handle.dart';
 
 import 'dio_utils.dart';
 import 'log_utils.dart';
@@ -9,20 +11,39 @@ typedef Success<T> = Function(T data);
 typedef Fail = Function(int code, String msg);
 
 class HttpUtils {
+  //TODO 登陆
   static void login<T>(parameters, Success success, Fail fail) {
     post(HttpConf.login, parameters, success: success, fail: fail);
   }
 
+  //TODO 获取商品列表
   static void getGoodsList<T>(param, Success success, Fail fail) {
     get(HttpConf.goodsList, param, success: success, fail: fail);
   }
 
+  //TODO 通过分类获取商品列表
   static void getCategoryGoodsList<T>(param, Success success, Fail fail) {
     get(HttpConf.categoryGoodsList, param, success: success, fail: fail);
   }
 
+  //todo 获取商品详情
+  static void getGoodsDetails<T>(param, Success success, Fail fail) {
+    get(HttpConf.goodsDetails, param, success: success, fail: fail);
+  }
+
+  //TODO 获取分类列表
   static void getCategoryList<T>(param, Success success, Fail fail) {
     get(HttpConf.categoryList, param, success: success, fail: fail);
+  }
+
+  //TODO 添加购物车
+  static void postAddCart<T>(param, Success success, Fail fail) {
+    post(HttpConf.addCart, param, success: success, fail: fail);
+  }
+
+  //TODO 获取购物车列表
+  static void getCartList<T>(param, Success success, Fail fail) {
+    get(HttpConf.cartList, param, success: success, fail: fail);
   }
 
   /********************************* 分割线 ********************************/
@@ -61,17 +82,21 @@ class HttpUtils {
 //    });
 //    //参数处理
 //    LogUtils.d("--------- parameters ---------");
-//    LogUtils.d("$parameters");
+    LogUtils.d("$parameters");
 
-    LogUtils.print_("-----url : $url");
+    LogUtils.print_("-----url : $url   ->  $parameters");
     DioUtils.request(method, url, parameters, success: (result) {
 //      LogUtils.d("--------- response ---------");
       LogUtils.print_(result.toString());
-      if (success != null) {
-        success(result);
+      if (ExceptionHandle.success == result['code']) {
+        if (success != null) {
+          success(result);
+        }
       } else {
-        //其他状态，弹出错误提示信息
-//        JhProgressHUD.showText(result['msg']);
+        if (fail != null) {
+          showToast(result['msg']);
+          fail(result['code'], result['msg']);
+        }
       }
     }, fail: (code, msg) {
 //      JhProgressHUD.showError(msg);

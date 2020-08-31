@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:provider/provider.dart';
+import 'package:shop_flutter/provide/CartProvider.dart';
 import '../config/index.dart';
 import 'CartPage.dart';
 import 'CategoryPage.dart';
@@ -100,6 +101,9 @@ class _IndexPageState extends State<IndexPage> {
           onTap: (index) {
             setState(() {
               Provider.of<CurrentIndexProvider>(context).changeIndex(index);
+              if (index == 2) {
+                Provider.of<CartProvider>(context).getCartList();
+              }
             });
           }),
       body: IndexedStack(
